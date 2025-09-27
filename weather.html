@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detailed Weather App</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(to top, #6a85b6 0%, #bac8e0 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .weather-box {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 350px;
+      transition: all 0.3s ease;
+    }
+    input[type="text"] {
+      width: 85%;
+      padding: 12px;
+      margin: 10px 0 15px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      background: #5C6BC0; /* A nice indigo color */
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #3F51B5;
+    }
+    .weather-result {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .weather-result h3 {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .main-info {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    .main-info .temp {
+        font-size: 52px;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    .main-info .condition {
+        text-transform: capitalize;
+        font-size: 18px;
+        color: #555;
+    }
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .detail-item {
+        background: #f4f4f9;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .detail-item .label {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+    .detail-item .value {
+        font-size: 18px;
+        color: #5C6BC0;
+        margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-box">
+    <h2>🌦 Detailed Weather</h2>
+    <input type="text" id="city" placeholder="Enter city name" />
+    <button onclick="getCityWeather()">Get Weather</button>
+    <div class="weather-result" id="result"></div>
+  </div>
+
+  <script>
+    const apiKey = "125e588577a14c4b94ac7230d67ae2bf"; // OpenCage API key
+    const weatherApiKey = "1aecec2920fd480e21c93dafda941b7b"; // OpenWeatherMap API key
+
+    // --- HELPER FUNCTION to convert UNIX timestamp to readable time ---
+    function formatTime(unixTimestamp) {
+        const date = new Date(unixTimestamp * 1000); // Convert seconds to milliseconds
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // Function to fetch weather data from OpenWeatherMap
+    async function getWeatherData(latitude, longitude, apiKey) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    }
+
+    // Function to fetch city coordinates using OpenCage Geocoding API
+    async function getCityCoordinates(city, apiKey) {
+      const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`;
+      const response = await fetch(geoUrl);
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        return data.results[0].geometry;
+      } else {
+        throw new Error("City not found. Please try again.");
+      }
+    }
+
+    // Main function to get weather and update the UI
+    async function getCityWeather() {
+      const city = document.getElementById("city").value;
+      const resultBox = document.getElementById("result");
+      
+      if (!city) {
+        resultBox.innerHTML = `<p style="color:red; text-align:center;">Please enter a city name.</p>`;
+        return;
+      }
+
+      // --- Add a loading state for better UX ---
+      resultBox.innerHTML = `<p style="text-align:center;">Fetching weather data...</p>`;
+
+      try {
+        const coords = await getCityCoordinates(city, apiKey);
+        const weatherData = await getWeatherData(coords.lat, coords.lng, weatherApiKey);
+
+        console.log("🔍 Full Weather API Response:", weatherData); // For debugging
+
+        if (weatherData) {
+          // --- Destructure the response for easier access to data ---
+          const { main, weather, wind, sys, name } = weatherData;
+
+          // --- Extract and format all the details ---
+          const temp = Math.round(main.temp);
+          const feelsLike = Math.round(main.feels_like);
+          const humidity = main.humidity;
+          const description = weather[0].description;
+          const iconCode = weather[0].icon;
+          const windSpeed = (wind.speed * 3.6).toFixed(1); // Convert m/s to km/h
+          const sunrise = formatTime(sys.sunrise);
+          const sunset = formatTime(sys.sunset);
+
+          // --- Build the new, detailed HTML ---
+          resultBox.innerHTML = `
+            <h3>${name}</h3>
+            <div class="main-info">
+              <img src="https://openweathermap.org/img/wn/${iconCode}@2x.png" alt="Weather icon">
+              <div>
+                 <div class="temp">${temp}°C</div>
+                 <div class="condition">${description}</div>
+              </div>
+            </div>
+            <div class="details-grid">
+              <div class="detail-item">
+                <div class="label">🌡️ Feels Like</div>
+                <div class="value">${feelsLike}°C</div>
+              </div>
+              <div class="detail-item">
+                <div class="label">💧 Humidity</div>
+                <div class="value">${humidity}%</div>
+              </div>
+              <div class="detail-item">
+                <div class="label">🌬️ Wind Speed</div>
+                <div class="value">${windSpeed} km/h</div>
+              </div>
+              <div class="detail-item">
+                <div class="label">🌅 Sunrise/Sunset</div>
+                <div class="value">${sunrise} / ${sunset}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          resultBox.innerHTML = `<p style="color:red; text-align:center;">Weather data not available.</p>`;
+        }
+      } catch (err) {
+        console.error("Error in getCityWeather:", err);
+        resultBox.innerHTML = `<p style="color:red; text-align:center;">${err.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
