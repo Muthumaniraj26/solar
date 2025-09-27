@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Power Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        #city-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #city-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        #city-form button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #city-form button:hover {
+            background-color: #2980b9;
+        }
+
+        .hidden { display: none !important; }
+
+        #summary {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        #result-city { margin: 0; color: #2980b9; }
+        .total-kwh { font-size: 48px; font-weight: 700; color: #2c3e50; }
+        .total-kwh span { color: #e67e22; }
+
+        #loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #error-message {
+            color: #e74c3c;
+            background-color: #fbe2e2;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☀️ Live Solar Generation Forecast</h1>
+            <p>Enter a city name to predict today's solar power generation.</p>
+        </header>
+
+        <form id="city-form">
+            <input type="text" id="city-input" placeholder="e.g., Rajapalayam, Chennai..." required>
+            <button type="submit">Predict</button>
+        </form>
+
+        <div id="results-container" class="hidden">
+            <div id="summary">
+                <h2 id="result-city"></h2>
+                <p>Total Estimated Generation Today</p>
+                <div class="total-kwh"><span id="total-kwh-value">--</span> kWh</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="prediction-chart"></canvas>
+            </div>
+        </div>
+
+        <div id="loader" class="hidden"></div>
+        <div id="error-message" class="hidden"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('city-form');
+            const cityInput = document.getElementById('city-input');
+            const resultsContainer = document.getElementById('results-container');
+            const loader = document.getElementById('loader');
+            const errorMessage = document.getElementById('error-message');
+            
+            const resultCity = document.getElementById('result-city');
+            const totalKwhValue = document.getElementById('total-kwh-value');
+            const chartCanvas = document.getElementById('prediction-chart');
+            
+            let predictionChart = null; // To hold the chart instance
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const city = cityInput.value;
+
+                // Reset UI
+                resultsContainer.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                loader.classList.remove('hidden');
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ city: city })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'An unknown error occurred.');
+                    }
+
+                    // Update UI with results
+                    displayResults(result);
+
+                } catch (error) {
+                    errorMessage.textContent = `Error: ${error.message}`;
+                    errorMessage.classList.remove('hidden');
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            });
+
+            function displayResults(data) {
+                resultCity.textContent = `Forecast for ${data.city}`;
+                totalKwhValue.textContent = data.total;
+                
+                const chartData = {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Predicted kWh',
+                        data: data.data,
+                        backgroundColor: 'rgba(230, 126, 34, 0.6)',
+                        borderColor: 'rgba(230, 126, 34, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                };
+
+                if (predictionChart) {
+                    predictionChart.destroy(); // Destroy old chart before creating a new one
+                }
+
+                predictionChart = new Chart(chartCanvas, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'kWh'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Hour of the Day'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw} kWh`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                resultsContainer.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
