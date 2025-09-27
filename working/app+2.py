@@ -135,7 +135,7 @@ def get_weather_forecast(lat, lon, timezone):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index2.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -214,3 +214,4 @@ if __name__ == '__main__':
             print("Invalid command. Use 'train' or 'run'.")
     else:
         print("Please specify a command: 'train' to create the model, or 'run' to start the web server.")
+
