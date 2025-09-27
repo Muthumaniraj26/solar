@@ -5,177 +5,217 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar Power Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+        :root { /* New color scheme */
+            --primary: #FFD166; --secondary: #06D6A0; --accent: #118AB2; --dark: #073B4C;
+            --darker: #052a36; --light: #F8F9FA; --gray: #6C757D; --danger: #EF476F;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%); color: var(--light); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .live-info { display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .live-item { background: rgba(7, 59, 76, 0.7); padding: 12px 20px; border-radius: 10px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+        .live-icon { font-size: 1.2rem; color: var(--primary); }
+        header { text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(7, 59, 76, 0.7); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .logo { font-size: 48px; margin-bottom: 10px; color: var(--primary); text-shadow: 0 0 15px rgba(255, 209, 102, 0.5); }
+        h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.1rem; color: var(--light); opacity: 0.8; max-width: 600px; margin: 0 auto; }
+        
+        /* Form styling to include capacity input */
+        #city-form { display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 30px; }
+        .input-group { display: flex; flex-direction: column; text-align: left; }
+        .input-group label { font-size: 0.9rem; color: var(--light); opacity: 0.7; margin-bottom: 5px; padding-left: 10px; }
+        #city-input, #capacity-input { padding: 15px 20px; border: none; border-radius: 50px; background: rgba(255, 255, 255, 0.1); color: var(--light); font-size: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        #city-input:focus, #capacity-input:focus { outline: none; background: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.3); }
+        
+        #city-form button { padding: 15px 30px; border: none; border-radius: 50px; background: linear-gradient(135deg, var(--primary), #FFB347); color: var(--dark); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 209, 102, 0.4); }
+        #city-form button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 209, 102, 0.6); }
 
-        .container {
-            background-color: #fff;
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-        }
-
-        header h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        header p {
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-
-        #city-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-
-        #city-input {
-            flex-grow: 1;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        #city-form button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        #city-form button:hover {
-            background-color: #2980b9;
-        }
-
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        @media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+        .card { background: rgba(7, 59, 76, 0.7); border-radius: 16px; padding: 25px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .card-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .card-icon { font-size: 24px; margin-right: 10px; color: var(--primary); }
+        .card-title { font-size: 1.3rem; font-weight: 600; }
+        .total-kwh { font-size: 3.5rem; font-weight: 700; text-align: center; margin: 20px 0; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .kwh-label { text-align: center; font-size: 1.1rem; color: var(--light); opacity: 0.8; margin-bottom: 10px; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-item { text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
+        .chart-container { position: relative; height: 300px; margin-top: 20px; }
+        #loader { display: flex; justify-content: center; align-items: center; flex-direction: column; margin: 40px 0; }
+        .spinner { width: 60px; height: 60px; border: 5px solid rgba(255, 255, 255, 0.1); border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { font-size: 1.1rem; color: var(--light); opacity: 0.8; }
+        #error-message { background: rgba(239, 71, 111, 0.2); border-left: 4px solid var(--danger); padding: 15px 20px; border-radius: 8px; margin: 20px 0; display: flex; align-items: center; }
+        .error-icon { font-size: 24px; margin-right: 10px; color: var(--danger); }
         .hidden { display: none !important; }
-
-        #summary {
-            background-color: #ecf0f1;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        #result-city { margin: 0; color: #2980b9; }
-        .total-kwh { font-size: 48px; font-weight: 700; color: #2c3e50; }
-        .total-kwh span { color: #e67e22; }
-
-        #loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        #error-message {
-            color: #e74c3c;
-            background-color: #fbe2e2;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeInUp 0.5s ease forwards; }
+        .current-weather { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .weather-main { display: flex; align-items: center; gap: 15px; }
+        .weather-temp { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+        .weather-desc { font-size: 1.1rem; opacity: 0.9; }
+        .weather-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .weather-detail-item { display: flex; align-items: center; gap: 8px; }
+        .weather-detail-value { font-weight: 600; }
+        footer { text-align: center; margin-top: 40px; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="live-info">
+            <div class="live-item"><i class="fas fa-clock live-icon"></i><div id="current-time">--:--:--</div></div>
+            <div class="live-item"><i class="fas fa-calendar-day live-icon"></i><div id="current-date">--</div></div>
+            <div class="live-item"><i class="fas fa-sun live-icon"></i><div id="sunrise-time">--:--</div></div>
+            <div class="live-item"><i class="fas fa-moon live-icon"></i><div id="sunset-time">--:--</div></div>
+        </div>
+
         <header>
-            <h1>☀️ Live Solar Generation Forecast</h1>
-            <p>Enter a city name to predict today's solar power generation.</p>
+            <div class="logo">☀️</div>
+            <h1>Solar Power Generation Forecast</h1>
+            <p class="subtitle">Enter your city and panel capacity to predict today's solar energy production</p>
         </header>
 
         <form id="city-form">
-            <input type="text" id="city-input" placeholder="e.g., Rajapalayam, Chennai..." required>
-            <button type="submit">Predict</button>
+            <div class="input-group">
+                <label for="city-input">City Name</label>
+                <input type="text" id="city-input" placeholder="e.g., Rajapalayam" required>
+            </div>
+             <div class="input-group">
+                <label for="capacity-input">System Capacity (kW)</label>
+                <input type="number" id="capacity-input" value="5.0" step="0.1" min="0.1" required>
+            </div>
+            <button type="submit"><i class="fas fa-bolt"></i> Forecast</button>
         </form>
 
+        <div id="error-message" class="hidden"><i class="fas fa-exclamation-triangle error-icon"></i><span id="error-text"></span></div>
+        <div id="loader" class="hidden"><div class="spinner"></div><div class="loading-text">Analyzing weather and predicting generation...</div></div>
+
         <div id="results-container" class="hidden">
-            <div id="summary">
-                <h2 id="result-city"></h2>
-                <p>Total Estimated Generation Today</p>
-                <div class="total-kwh"><span id="total-kwh-value">--</span> kWh</div>
+            <div class="card fade-in">
+                <div class="card-header"><i class="fas fa-cloud-sun card-icon"></i><h2 class="card-title" id="current-weather-city">Current Weather</h2></div>
+                <div class="current-weather">
+                    <div class="weather-main">
+                        <div>
+                            <div class="weather-temp" id="current-temp">--°C</div>
+                            <div class="weather-desc" id="current-weather-main">--</div>
+                        </div>
+                        <div id="weather-icon" style="font-size: 3rem;">☀️</div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="weather-detail-item"><i class="fas fa-wind"></i><span>Wind:</span><span class="weather-detail-value" id="wind-speed">-- km/h</span></div>
+                        <div class="weather-detail-item"><i class="fas fa-tint"></i><span>Humidity:</span><span class="weather-detail-value" id="current-humidity">--%</span></div>
+                        <div class="weather-detail-item"><i class="fas fa-temperature-low"></i><span>Feels like:</span><span class="weather-detail-value" id="feels-like">--°C</span></div>
+                        <div class="weather-detail-item"><i class="fas fa-eye"></i><span>Visibility:</span><span class="weather-detail-value" id="visibility">-- km</span></div>
+                    </div>
+                </div>
             </div>
-            <div class="chart-container">
-                <canvas id="prediction-chart"></canvas>
+            
+            <div class="dashboard">
+                <div class="card fade-in">
+                    <div class="card-header"><i class="fas fa-sun card-icon"></i><h2 class="card-title" id="result-city">Solar Forecast</h2></div>
+                    <div class="kwh-label">Total Estimated Generation</div>
+                    <div class="total-kwh"><span id="total-kwh-value">--</span> kWh</div>
+                    <div class="stats">
+                        <div class="stat-item"><div class="stat-value" id="peak-hour">--:--</div><div class="stat-label">Peak Hour</div></div>
+                        <div class="stat-item"><div class="stat-value" id="peak-kwh">--</div><div class="stat-label">Peak kWh</div></div>
+                        <div class="stat-item"><div class="stat-value" id="avg-kwh">--</div><div class="stat-label">Avg. Prod. kWh</div></div>
+                        <div class="stat-item"><div class="stat-value" id="efficiency">--%</div><div class="stat-label">Peak Efficiency</div></div>
+                    </div>
+                </div>
+                
+                <div class="card fade-in">
+                    <div class="card-header"><i class="fas fa-chart-bar card-icon"></i><h2 class="card-title">Hourly Generation Forecast</h2></div>
+                    <div class="chart-container"><canvas id="prediction-chart"></canvas></div>
+                </div>
+            </div>
+             <div class="card fade-in">
+                <div class="card-header"><i class="fas fa-info-circle card-icon"></i><h2 class="card-title">Daily Summary</h2></div>
+                <div class="stats">
+                    <div class="stat-item"><div class="stat-value" id="avg-temp">--°C</div><div class="stat-label">Avg Temp</div></div>
+                    <div class="stat-item"><div class="stat-value" id="avg-cloud">--%</div><div class="stat-label">Avg Cloud Cover</div></div>
+                    <div class="stat-item"><div class="stat-value" id="avg-radiation">-- W/m²</div><div class="stat-label">Avg Solar Radiation</div></div>
+                    <div class="stat-item"><div class="stat-value" id="avg-humidity">--%</div><div class="stat-label">Avg Humidity</div></div>
+                </div>
             </div>
         </div>
 
-        <div id="loader" class="hidden"></div>
-        <div id="error-message" class="hidden"></div>
+        <footer><p>Solar Power Dashboard | Powered by Machine Learning & Open-Meteo API</p></footer>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('city-form');
             const cityInput = document.getElementById('city-input');
+            const capacityInput = document.getElementById('capacity-input');
             const resultsContainer = document.getElementById('results-container');
             const loader = document.getElementById('loader');
             const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
             
+            // Get all the new element IDs
+            const currentTime = document.getElementById('current-time');
+            const currentDate = document.getElementById('current-date');
+            const sunriseTime = document.getElementById('sunrise-time');
+            const sunsetTime = document.getElementById('sunset-time');
+            const currentWeatherCity = document.getElementById('current-weather-city');
+            const currentTemp = document.getElementById('current-temp');
+            const currentWeatherMain = document.getElementById('current-weather-main');
+            const weatherIcon = document.getElementById('weather-icon');
+            const windSpeed = document.getElementById('wind-speed');
+            const currentHumidity = document.getElementById('current-humidity');
+            const feelsLike = document.getElementById('feels-like');
+            const visibility = document.getElementById('visibility');
             const resultCity = document.getElementById('result-city');
             const totalKwhValue = document.getElementById('total-kwh-value');
             const chartCanvas = document.getElementById('prediction-chart');
-            
-            let predictionChart = null; // To hold the chart instance
+            const peakHour = document.getElementById('peak-hour');
+            const peakKwh = document.getElementById('peak-kwh');
+            const avgKwh = document.getElementById('avg-kwh');
+            const efficiency = document.getElementById('efficiency');
+            const avgTemp = document.getElementById('avg-temp');
+            const avgCloud = document.getElementById('avg-cloud');
+            const avgRadiation = document.getElementById('avg-radiation');
+            const avgHumidity = document.getElementById('avg-humidity');
+
+            let predictionChart = null;
+
+            function updateDateTime() {
+                const now = new Date();
+                currentTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                currentDate.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+            }
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const city = cityInput.value;
-
-                // Reset UI
+                const city = cityInput.value.trim();
+                const capacity = capacityInput.value.trim();
+                if (!city || !capacity || parseFloat(capacity) <= 0) return;
+                
                 resultsContainer.classList.add('hidden');
                 errorMessage.classList.add('hidden');
                 loader.classList.remove('hidden');
 
                 try {
+                    // --- This is the REAL fetch call to your backend ---
                     const response = await fetch('/predict', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ city: city })
+                        body: JSON.stringify({ city: city, capacity: capacity })
                     });
-
                     const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.error || 'An unknown error occurred.');
-                    }
-
-                    // Update UI with results
+                    if (!response.ok) throw new Error(result.error || 'An unknown error occurred.');
+                    
                     displayResults(result);
-
                 } catch (error) {
-                    errorMessage.textContent = `Error: ${error.message}`;
+                    errorText.textContent = error.message;
                     errorMessage.classList.remove('hidden');
                 } finally {
                     loader.classList.add('hidden');
@@ -183,61 +223,89 @@
             });
 
             function displayResults(data) {
-                resultCity.textContent = `Forecast for ${data.city}`;
-                totalKwhValue.textContent = data.total;
+                // --- Populate all the new UI elements with LIVE data ---
                 
-                const chartData = {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Predicted kWh',
-                        data: data.data,
-                        backgroundColor: 'rgba(230, 126, 34, 0.6)',
-                        borderColor: 'rgba(230, 126, 34, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                };
+                // Live info bar
+                sunriseTime.textContent = data.daily_info.sunrise;
+                sunsetTime.textContent = data.daily_info.sunset;
 
-                if (predictionChart) {
-                    predictionChart.destroy(); // Destroy old chart before creating a new one
+                // Current Weather card
+                currentWeatherCity.textContent = `Current Weather in ${data.city}`;
+                if (data.current_weather && data.current_weather.description) {
+                    const descParts = data.current_weather.description.split(' ');
+                    const icon = descParts.pop();
+                    const text = descParts.join(' ');
+                    weatherIcon.textContent = icon;
+                    currentWeatherMain.textContent = text;
                 }
+                currentTemp.textContent = `${data.current_weather.temperature}°C`;
+                windSpeed.textContent = `${data.current_weather.windspeed} km/h`;
+                currentHumidity.textContent = `${data.current_weather.humidity}%`;
+                feelsLike.textContent = `${data.current_weather.feels_like}°C`;
+                visibility.textContent = `${data.current_weather.visibility} km`;
+                
+                // Solar Forecast card
+                resultCity.textContent = `Solar Forecast for ${data.city}`;
+                totalKwhValue.textContent = data.total;
+                peakHour.textContent = data.stats.peak_hour;
+                peakKwh.textContent = `${data.stats.peak_kwh} kWh`;
+                avgKwh.textContent = `${data.stats.avg_kwh} kWh`;
+                efficiency.textContent = `${data.stats.efficiency}%`;
 
-                predictionChart = new Chart(chartCanvas, {
+                // Daily Summary card
+                avgTemp.textContent = `${data.daily_info.avg_temp}°C`;
+                avgCloud.textContent = `${data.daily_info.avg_cloud}%`;
+                avgRadiation.textContent = `${data.daily_info.avg_radiation} W/m²`;
+                avgHumidity.textContent = `${data.daily_info.avg_humidity}%`;
+
+                // Chart
+                createChart(data.labels, data.data);
+                
+                // Show results
+                resultsContainer.classList.add('fade-in');
+                resultsContainer.classList.remove('hidden');
+            }
+
+            function createChart(labels, values) {
+                if (predictionChart) {
+                    predictionChart.destroy();
+                }
+                
+                const ctx = chartCanvas.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(255, 209, 102, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 209, 102, 0.1)');
+                
+                predictionChart = new Chart(ctx, {
                     type: 'bar',
-                    data: chartData,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Predicted kWh',
+                            data: values,
+                            backgroundColor: gradient,
+                            borderColor: 'rgba(255, 209, 102, 1)',
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            fill: true,
+                        }]
+                    },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'kWh'
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Hour of the Day'
-                                }
-                            }
+                            y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'rgba(255, 255, 255, 0.7)' }, title: { display: true, text: 'kWh', color: 'rgba(255, 255, 255, 0.7)' } },
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'rgba(255, 255, 255, 0.7)' }, title: { display: true, text: 'Hour of the Day', color: 'rgba(255, 255, 255, 0.7)' } }
                         },
                         plugins: {
-                            legend: {
-                                display: false
-                            },
+                            legend: { display: false },
                             tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${context.dataset.label}: ${context.raw} kWh`;
-                                    }
-                                }
+                                backgroundColor: 'rgba(7, 59, 76, 0.9)', titleColor: 'rgba(255, 255, 255, 0.9)',
+                                bodyColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(255, 209, 102, 0.5)', borderWidth: 1
                             }
                         }
                     }
                 });
-
-                resultsContainer.classList.remove('hidden');
             }
         });
     </script>
