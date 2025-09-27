@@ -2,7 +2,7 @@ import requests
 from flask import Flask, render_template, jsonify, request
 
 # --- CONFIGURATION (GOOGLE API KEY) ---
-GOOGLE_API_KEY = "AIzaSyB5hXGd0dmKJfSHw1wZViEKdeC4F6-3p4s"
+GOOGLE_API_KEY = "Apikey"
 
 app = Flask(__name__)
 
@@ -74,3 +74,4 @@ def get_weather():
 if __name__ == "__main__":
     # Start the Flask dev server
     app.run(debug=True)
+
