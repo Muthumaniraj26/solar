@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Flask, render_template, jsonify
 
 # --- CONFIGURATION (FOR GOOGLE API) ---
-GOOGLE_API_KEY = "AIzaSyB5hXGd0dmKJfSHw1wZViEKdeC4F6-3p4s"
+GOOGLE_API_KEY = "Apikey"
 LATITUDE = 9.4716
 LONGITUDE = 77.5569
 SOLAR_DATA_CSV = "sample_inverter_data_large.csv"
@@ -99,4 +99,5 @@ def home(): return render_template('index.html')
 def api_prediction(): return jsonify(get_prediction_data())
 if __name__ == "__main__":
     load_data_and_train_model()
+
     app.run(debug=True)
